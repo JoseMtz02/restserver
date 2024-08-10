@@ -3,10 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acceso Denegado</title>
+    <title>Google Signin</title>
 </head>
 <body>
+
+    <h1>Google Signin</h1>
+    <hr>
     
-    <h1>Acceso Denegado</h1>
+    <div id="g_id_onload"
+        data-client_id="161211244229-dnckar719ib1upmuls2hkqn7o4ovd4vs.apps.googleusercontent.com"
+        data-callback="handleCredentialResponse"
+        data-auto_prompt="false"
+        data-auto_select="true">
+    </div>
+
+    <div class="g_id_signin"
+         data-type="standard"
+         data-size="large"
+         data-theme="outline"
+         data-text="sign_in_with"
+         data-shape="rectangular"
+         data-logo_alignment="left">
+    </div>
+
+    <button id="g_id_signout">Sign Out</button>
+
+    <hr>
+    <h1>One Tap</h1>
+    
+    <script>
+      function handleCredentialResponse(response) {
+        
+
+    const body = { id_token: response.credential };
+
+    fetch('http://localhost:8080/api/auth/google', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {
+                throw new Error(`HTTP error! status: ${response.status}, message: ${err.msg}`);
+            });
+        }
+        return response.json();
+    })
+    .then(resp => {
+        if (resp && resp.usuario && resp.usuario.correo) {
+            console.log(resp);
+            localStorage.setItem('email', resp.usuario.correo);
+        } else {
+            console.error('La respuesta no contiene el objeto esperado:', resp);
+        }
+    })
+    .catch(error => {
+        console.error('Hubo un problema con la solicitud:', error);
+    });
+}
+
+
+        const button = document.getElementById('g_id_signout');
+        button.onclick = async () => {
+            google.accounts.id.disableAutoSelect();
+            google.accounts.id.revoke(localStorage.getItem('email'), done => {
+                console.log('Consentimiento revocado');
+                localStorage.clear();
+                location.reload();
+            });
+        }
+    </script>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>
 </html>
