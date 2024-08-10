@@ -30,42 +30,50 @@
 
     <hr>
     <h1>One Tap</h1>
-    
+
     <script>
-      function handleCredentialResponse(response) {
-        
+        // Define the API endpoint based on the environment
+        const apiUrl = (window.location.hostname.includes('localhost'))
+                       ? 'http://localhost:8080/api/auth/google'
+                       : 'https://restserver-node-fefca7921dc0.herokuapp.com/api/auth/google';
 
-    const body = { id_token: response.credential };
+        // Handle the credential response from Google
+        function handleCredentialResponse(response) {
+            const body = { id_token: response.credential };
 
-    fetch('http://localhost:8080/api/auth/google', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(err => {
-                throw new Error(`HTTP error! status: ${response.status}, message: ${err.msg}`);
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${err.msg}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(resp => {
+                if (resp && resp.usuario) {
+                    console.log('Usuario:', resp.usuario);
+                    console.log('Correo:', resp.usuario.correo);
+                    console.log('Nombre:', resp.usuario.nombre);
+                    console.log('Imagen:', resp.usuario.img);
+
+                    localStorage.setItem('email', resp.usuario.correo);
+                } else {
+                    console.error('La respuesta no contiene el objeto esperado:', resp);
+                }
+            })
+            .catch(error => {
+                console.error('Hubo un problema con la solicitud:', error);
             });
         }
-        return response.json();
-    })
-    .then(resp => {
-        if (resp && resp.usuario && resp.usuario.correo) {
-            console.log(resp);
-            localStorage.setItem('email', resp.usuario.correo);
-        } else {
-            console.error('La respuesta no contiene el objeto esperado:', resp);
-        }
-    })
-    .catch(error => {
-        console.error('problemas con la solicitud:', error);
-    });
-}
 
-
+        // Handle sign out
         const button = document.getElementById('g_id_signout');
         button.onclick = async () => {
             google.accounts.id.disableAutoSelect();
@@ -75,8 +83,16 @@
                 location.reload();
             });
         }
+
+        // Load Google Sign-In script
+        (function() {
+            const script = document.createElement('script');
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.async = true;
+            script.defer = true;
+            document.body.appendChild(script);
+        })();
     </script>
 
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>
 </html>
